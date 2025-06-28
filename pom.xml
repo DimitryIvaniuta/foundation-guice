@@ -170,6 +170,12 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <!-- Build Configuration -->
@@ -199,7 +205,6 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-
 
             <!-- Source JAR -->
             <plugin>
@@ -240,7 +245,10 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.3</version>
                 <configuration>
+                    <!-- Run tests on the classpath (not module path) -->
                     <useModulePath>false</useModulePath>
+                    <!-- Open up java.lang for JUnit’s dynamic proxies -->
+                    <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
         </plugins>

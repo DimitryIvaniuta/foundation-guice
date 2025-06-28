@@ -78,75 +78,93 @@ class VisionClientProviderTest {
      * @throws IOException if the static mocking fails
      */
     @Test
-    void testVisionClientIsSingleton() throws IOException {
-        // 1) Create a real, empty temp file so FileInputStream succeeds
-        Path tempCreds = Files.createTempFile("vision-creds", ".json");
-        // (leave it empty; we'll stub parsing next)
+    void testVisionClientIsSingleton() throws Exception {
+        // 1) Create a temp creds file and point the provider at it
+        Path credsFile = Files.createTempFile("vision-creds", ".json");
+        System.setProperty("GOOGLE_CREDENTIALS_PATH", credsFile.toString());
 
-        // 2) Point the provider at our temp file
-        System.setProperty("GOOGLE_CREDENTIALS_PATH", tempCreds.toString());
+        // 2) Stub GoogleCredentials.fromStream(...) to avoid JSON parsing
+        try (
+                MockedStatic<GoogleCredentials> credsStatic =
+                        Mockito.mockStatic(GoogleCredentials.class);
+                // 3) Stub exactly the overload create(ImageAnnotatorSettings):
+                MockedStatic<ImageAnnotatorClient> clientStatic =
+                        Mockito.mockStatic(ImageAnnotatorClient.class)
+        ) {
+            // Arrange credential stub
+            GoogleCredentials dummyCreds = Mockito.mock(GoogleCredentials.class);
+            Mockito.when(dummyCreds.createScoped(Mockito.anyList()))
+                    .thenReturn(dummyCreds);
+            credsStatic.when(() ->
+                    GoogleCredentials.fromStream(Mockito.any(FileInputStream.class))
+            ).thenReturn(dummyCreds);
 
-        // 3) Stub GoogleCredentials.fromStream(...) → return a mock that returns itself on createScoped()
-        GoogleCredentials mockCreds = Mockito.mock(GoogleCredentials.class);
-        Mockito.when(mockCreds.createScoped(Mockito.anyList()))
-                .thenReturn(mockCreds);
-
-        try (MockedStatic<GoogleCredentials> credsStatic = Mockito.mockStatic(GoogleCredentials.class)) {
-            credsStatic.when(() -> GoogleCredentials.fromStream(Mockito.any(FileInputStream.class)))
-                    .thenReturn(mockCreds);
-
-            // 4) Stub ImageAnnotatorClient.create(ImageAnnotatorSettings) → our mock client
+            // Arrange client stub (disambiguate by matching ImageAnnotatorSettings)
             ImageAnnotatorClient mockClient = Mockito.mock(ImageAnnotatorClient.class);
-            try (MockedStatic<ImageAnnotatorClient> clientStatic = Mockito.mockStatic(ImageAnnotatorClient.class)) {
-                clientStatic.when(() -> ImageAnnotatorClient.create(Mockito.any(ImageAnnotatorSettings.class)))
-                        .thenReturn(mockClient);
+            clientStatic.when(() ->
+                    ImageAnnotatorClient.create(Mockito.any(ImageAnnotatorSettings.class))
+            ).thenReturn(mockClient); // NOSONAR
 
-                // 5) Now exercise the provider
-                ImageAnnotatorClient first = component.visionClient();
-                ImageAnnotatorClient second = component.visionClient();
-
-                assertNotNull(first, "Should never return null");
-                assertSame(mockClient, first, "Should return our stubbed client");
-                assertSame(first, second, "Should be the same singleton instance");
+            // 4) Both calls to visionClient() in the same try‐with‐resources header:
+            try (
+                    ImageAnnotatorClient first = component.visionClient();
+                    ImageAnnotatorClient second = component.visionClient()
+            ) {
+                assertNotNull(first, "Client must not be null");
+                assertSame(mockClient, first, "Should return the stubbed instance");
+                assertSame(first, second, "Should be the same singleton");
             }
         } finally {
-            Files.deleteIfExists(tempCreds);
+            Files.deleteIfExists(credsFile);
+            System.clearProperty("GOOGLE_CREDENTIALS_PATH");
         }
     }
+
     /**
      * Verifies that if {@link ImageAnnotatorClient#create()} throws an IOException,
      * the error is propagated as a runtime exception with the original cause.
      */
     @Test
     void testVisionClientCreationFailure() throws IOException {
-        // 1) Prepare credentials file again
-        Path tempCreds = Files.createTempFile("vision-creds", ".json");
-        System.setProperty("GOOGLE_CREDENTIALS_PATH", tempCreds.toString());
+        Path credsFile = Files.createTempFile("vision-creds", ".json");
+        System.setProperty("GOOGLE_CREDENTIALS_PATH", credsFile.toString());
 
-        // 2) Stub credential parsing to succeed
-        GoogleCredentials mockCreds = Mockito.mock(GoogleCredentials.class);
-        Mockito.when(mockCreds.createScoped(Mockito.anyList()))
-                .thenReturn(mockCreds);
+        try (
+                MockedStatic<GoogleCredentials> credsStatic =
+                        Mockito.mockStatic(GoogleCredentials.class);
+                // NOSONAR: static mocking of AutoCloseable factory
+                MockedStatic<ImageAnnotatorClient> clientStatic =
+                        Mockito.mockStatic(ImageAnnotatorClient.class)
+        ) {
+            // Stub credentials
+            GoogleCredentials dummyCreds = Mockito.mock(GoogleCredentials.class);
+            Mockito.when(dummyCreds.createScoped(Mockito.anyList()))
+                    .thenReturn(dummyCreds);
+            credsStatic.when(() ->
+                    GoogleCredentials.fromStream(Mockito.any(FileInputStream.class))
+            ).thenReturn(dummyCreds);
 
-        try (MockedStatic<GoogleCredentials> credsStatic = Mockito.mockStatic(GoogleCredentials.class)) {
-            credsStatic.when(() -> GoogleCredentials.fromStream(Mockito.any(FileInputStream.class)))
-                    .thenReturn(mockCreds);
-
-            // 3) Stub the create(settings) call to throw IOException
+            // Stub create(settings) to throw
             IOException ioEx = new IOException("creation failed");
-            try (MockedStatic<ImageAnnotatorClient> clientStatic = Mockito.mockStatic(ImageAnnotatorClient.class)) {
-                clientStatic.when(() -> ImageAnnotatorClient.create(Mockito.any(ImageAnnotatorSettings.class)))
-                        .thenThrow(ioEx);
+            clientStatic.when(() ->
+                    ImageAnnotatorClient.create(Mockito.any(ImageAnnotatorSettings.class))
+            ).thenThrow(ioEx);
 
-                // 4) Calling visionClient() should now wrap that in our dedicated exception
-                IllegalStateException ex = assertThrows(
-                        IllegalStateException.class,
-                        () -> component.visionClient()
-                );
-                assertSame(ioEx, ex.getCause(), "Should preserve the original IOException");
-            }
+            // Use try-with-resources to satisfy resource rules, but we expect exception
+            IllegalStateException ex = assertThrows(
+                    IllegalStateException.class,
+                    () -> {
+                        try (ImageAnnotatorClient ignored = component.visionClient()) {
+                            // no-op
+                        }
+                    },
+                    "Expected VisionClientInitializationException on failure"
+            );
+            assertSame(ioEx, ex.getCause(),
+                    "Should preserve original IOException as cause");
         } finally {
-            Files.deleteIfExists(tempCreds);
+            Files.deleteIfExists(credsFile);
+            System.clearProperty("GOOGLE_CREDENTIALS_PATH");
         }
     }
 }
