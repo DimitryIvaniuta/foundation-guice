@@ -78,7 +78,7 @@ foundation-sdk/
 
 ```bash
 # Clone the repo
-git clone git@github.com:your-org/foundation-sdk.git
+git clone git@github.com:di/di-foundation-sdk.git
 cd foundation-sdk
 
 # Build with Maven Wrapper
@@ -91,8 +91,8 @@ In your microservice, add a dependency in your `pom.xml`:
 
 ```xml
 <dependency>
-    <groupId>com.foundation</groupId>
-    <artifactId>foundation-sdk</artifactId>
+    <groupId>com.github.di.foundation</groupId>
+    <artifactId>di-foundation-sdk</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
@@ -100,12 +100,12 @@ In your microservice, add a dependency in your `pom.xml`:
 Then in your `Main` application (e.g., in package `com.vendorinvoice`):
 
 ```java
-import com.foundation.config.Config;
-import com.foundation.config.ConfigModule;
-import com.foundation.grpc.GrpcClientModule;
-import com.foundation.persistence.PersistenceModule;
-import com.foundation.streams.KafkaStreamsModule;
-import com.foundation.health.HealthModule;
+
+import config.com.github.dimitryivaniuta.foundation.ConfigModule;
+import grpc.com.github.dimitryivaniuta.foundation.GrpcClientModule;
+import persistence.com.github.dimitryivaniuta.foundation.PersistenceModule;
+import streams.com.github.dimitryivaniuta.foundation.KafkaStreamsModule;
+import health.com.github.dimitryivaniuta.foundation.HealthModule;
 import dagger.Component;
 
 @Singleton
@@ -118,18 +118,21 @@ import dagger.Component;
         YourBusinessModule.class  // bind your service logic here
 })
 public interface AppComponent {
-    KafkaStreams kafkaStreams();
-    DocumentSink documentSink();
-    ErrorSink errorSink();
-    HealthChecker healthChecker();
+  KafkaStreams kafkaStreams();
+
+  DocumentSink documentSink();
+
+  ErrorSink errorSink();
+
+  HealthChecker healthChecker();
 }
 
 public class Main {
-    public static void main(String[] args) {
-        AppComponent component = DaggerAppComponent.create();
-        component.kafkaStreams().start();
-        // Expose healthChecker() via HTTP or k8s probe
-    }
+  public static void main(String[] args) {
+    AppComponent component = DaggerAppComponent.create();
+    component.kafkaStreams().start();
+    // Expose healthChecker() via HTTP or k8s probe
+  }
 }
 ```
 
