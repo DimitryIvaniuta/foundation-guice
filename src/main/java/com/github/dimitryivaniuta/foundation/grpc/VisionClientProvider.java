@@ -5,9 +5,9 @@ import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.vision.v1.ImageAnnotatorClient;
 import com.google.cloud.vision.v1.ImageAnnotatorSettings;
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -72,10 +72,11 @@ public class VisionClientProvider implements Provider<ImageAnnotatorClient> {
      * key specified in the configuration.
      *
      * @return newly created ImageAnnotatorClient
-     * @throws IllegalStateException if credentials cannot be loaded or client creation fails
+     * @throws VisionClientInitializationException if an I/O error occurs
      */
     private ImageAnnotatorClient createClient() {
-        try (FileInputStream fis = new FileInputStream(config.getGoogleCredentialsPath())) {
+        String path = config.getGoogleCredentialsPath();
+        try (FileInputStream fis = new FileInputStream(path)) {
             GoogleCredentials credentials = GoogleCredentials.fromStream(fis)
                     .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
 
@@ -88,10 +89,7 @@ public class VisionClientProvider implements Provider<ImageAnnotatorClient> {
             Runtime.getRuntime().addShutdownHook(new Thread(client::close));
             return client;
         } catch (IOException e) {
-            throw new IllegalStateException(
-                    "Failed to create ImageAnnotatorClient with credentials at '"
-                            + config.getGoogleCredentialsPath() + "'", e
-            );
+            throw new VisionClientInitializationException(path, e);
         }
     }
 }

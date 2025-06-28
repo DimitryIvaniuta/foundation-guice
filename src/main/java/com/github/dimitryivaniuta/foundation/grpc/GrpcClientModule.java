@@ -7,7 +7,7 @@ import com.google.cloud.vision.v1.ImageAnnotatorClient;
 import com.google.cloud.vision.v1.ImageAnnotatorSettings;
 import dagger.Module;
 import dagger.Provides;
-import jakarta.inject.Singleton;
+import javax.inject.Singleton;
 
 import java.io.FileInputStream;
 import java.io.IOException;

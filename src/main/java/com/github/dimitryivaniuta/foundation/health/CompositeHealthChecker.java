@@ -4,8 +4,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * CompositeHealthChecker aggregates multiple {@link HealthChecker} implementations

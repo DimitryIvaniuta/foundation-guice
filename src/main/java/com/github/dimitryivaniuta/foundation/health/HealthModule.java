@@ -4,7 +4,7 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
-import jakarta.inject.Singleton;
+import javax.inject.Singleton;
 
 import java.util.Set;
 

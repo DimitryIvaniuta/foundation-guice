@@ -1,7 +1,5 @@
-package com.foundation.config;
+package com.github.dimitryivaniuta.foundation.config;
 
-import com.github.dimitryivaniuta.foundation.config.Config;
-import com.github.dimitryivaniuta.foundation.config.ConfigModule;
 import dagger.Component;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +35,23 @@ class ConfigModuleTest {
      */
     @BeforeEach
     void setUp() {
+        // Provide required environment settings via system properties for tests
+        System.setProperty("APPLICATION_ID", "test-app");
+        System.setProperty("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092");
+        System.setProperty("SCHEMA_REGISTRY_URL", "http://localhost:8081");
+        System.setProperty("INPUT_TOPIC", "test-input-topic");
+        System.setProperty("OUTPUT_TOPIC", "test-output-topic");
+        System.setProperty("GV_THRESHOLD", "5");
+        System.setProperty("RUN_GV_IN_PARALLEL", "false");
+        System.setProperty("GOOGLE_CREDENTIALS_PATH", "/tmp/creds.json");
+        System.setProperty("KAFKA_SECURITY_PROTOCOL", "PLAINTEXT");
+        System.setProperty("KAFKA_TRUSTSTORE_PATH", "/tmp/truststore.jks");
+        System.setProperty("KAFKA_TRUSTSTORE_PASSWORD", "trustpass");
+        System.setProperty("KAFKA_KEYSTORE_PATH", "/tmp/keystore.jks");
+        System.setProperty("KAFKA_KEYSTORE_PASSWORD", "keypass");
+        System.setProperty("VISION_API_TIMEOUT_MS", "10000");
+        System.setProperty("HEALTH_CHECK_INTERVAL_SEC", "30");
+
         component = DaggerConfigModuleTest_TestComponent.create();
     }
 

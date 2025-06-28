@@ -3,7 +3,7 @@ package com.github.dimitryivaniuta.foundation.streams;
 import com.github.dimitryivaniuta.foundation.config.Config;
 import dagger.Module;
 import dagger.Provides;
-import jakarta.inject.Singleton;
+import javax.inject.Singleton;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.serialization.Serdes;

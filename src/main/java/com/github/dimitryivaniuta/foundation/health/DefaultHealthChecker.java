@@ -1,8 +1,8 @@
 package com.github.dimitryivaniuta.foundation.health;
 
 import com.github.dimitryivaniuta.foundation.config.Config;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import java.time.Instant;
 import java.util.Collections;

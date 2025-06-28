@@ -1,7 +1,8 @@
 package com.github.dimitryivaniuta.foundation.health;
 
+import com.github.dimitryivaniuta.foundation.config.ConfigModule;
 import dagger.Component;
-import jakarta.inject.Singleton;
+import javax.inject.Singleton;
 
 /**
  * HealthComponent is the Dagger component that assembles all health‐check
@@ -14,7 +15,10 @@ import jakarta.inject.Singleton;
  * </p>
  */
 @Singleton
-@Component(modules = HealthModule.class)
+@Component(modules = {
+        ConfigModule.class,
+        HealthModule.class
+})
 public interface HealthComponent {
 
     /**

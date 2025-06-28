@@ -2,7 +2,7 @@ package com.github.dimitryivaniuta.foundation.config;
 
 import dagger.Module;
 import dagger.Provides;
-import jakarta.inject.Singleton;
+import javax.inject.Singleton;
 
 /**
  * Dagger module responsible for providing application-wide configuration.
